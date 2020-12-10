@@ -30,7 +30,7 @@ class PetFriends:
         response = requests.get(self.base_url + 'api/key', headers=headers)
         return self._get_status_result(response)
 
-    def get_list_of_pets(self, auth_key: dict, filter: str='') -> tuple:
+    def get_list_of_pets(self, auth_key: dict, filter: str = '') -> tuple:
         """
         Возвращает список питомцев
         """
@@ -43,18 +43,23 @@ class PetFriends:
         """
         Добавлет нового питомца
         """
+        photo_file = open(pet_data['pet_photo'], 'rb')
         data = MultipartEncoder(
-        fields={
-            'name': pet_data['name'],
-            'animal_type': pet_data['animal_type'],
-            'age': pet_data['age'],
-            'pet_photo': (pet_data['pet_photo'], open(pet_data['pet_photo'], 'rb'), 'image/jpeg')
-        })
+            fields={
+                'name': pet_data['name'],
+                'animal_type': pet_data['animal_type'],
+                'age': pet_data['age'],
+                'pet_photo': (pet_data['pet_photo'], photo_file, 'image/jpeg')
+                if pet_data['pet_photo'] != '' else ''
+            })
         headers = {
             'auth_key': auth_key['key'],
             'Content-Type': data.content_type
         }
         response = requests.post(self.base_url + 'api/pets', headers=headers, data=data)
+
+        if not photo_file.closed:
+            photo_file.close()
 
         return self._get_status_result(response)
 

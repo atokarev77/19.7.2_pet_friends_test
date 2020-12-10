@@ -1,0 +1,268 @@
+1 Introduction
+
+1.1 Purpose
+
+   The Hypertext Transfer Protocol (HTTP) is an application-level
+   protocol for distributed, collaborative, hypermedia information
+   systems. HTTP has been in use by the World-Wide Web global
+   information initiative since 1990. The first version of HTTP,
+   referred to as HTTP/0.9, was a simple protocol for raw data transfer
+   across the Internet. HTTP/1.0, as defined by RFC 1945 [6], improved
+   the protocol by allowing messages to be in the format of MIME-like
+   messages, containing metainformation about the data transferred and
+   modifiers on the request/response semantics. However, HTTP/1.0 does
+   not sufficiently take into consideration the effects of hierarchical
+   proxies, caching, the need for persistent connections, or virtual
+   hosts. In addition, the proliferation of incompletely-implemented
+   applications calling themselves "HTTP/1.0" has necessitated a
+   protocol version change in order for two communicating applications
+   to determine each other's true capabilities.
+
+   This specification defines the protocol referred to as "HTTP/1.1".
+   This protocol includes more stringent requirements than HTTP/1.0 in
+   order to ensure reliable implementation of its features.
+
+   Practical information systems require more functionality than simple
+   retrieval, including search, front-end update, and annotation. HTTP
+   allows an open-ended set of methods and headers that indicate the
+   purpose of a request [47]. It builds on the discipline of reference
+   provided by the Uniform Resource Identifier (URI) [3], as a location
+   (URL) [4] or name (URN) [20], for indicating the resource to which a
+
+
+
+
+
+Fielding, et al.            Standards Track                     [Page 7]
+
+RFC 2616                        HTTP/1.1                       June 1999
+
+
+   method is to be applied. Messages are passed in a format similar to
+   that used by Internet mail [9] as defined by the Multipurpose
+   Internet Mail Extensions (MIME) [7].
+
+   HTTP is also used as a generic protocol for communication between
+   user agents and proxies/gateways to other Internet systems, including
+   those supported by the SMTP [16], NNTP [13], FTP [18], Gopher [2],
+   and WAIS [10] protocols. In this way, HTTP allows basic hypermedia
+   access to resources available from diverse applications.
+
+1.2 Requirements
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+   document are to be interpreted as described in RFC 2119 [34].
+
+   An implementation is not compliant if it fails to satisfy one or more
+   of the MUST or REQUIRED level requirements for the protocols it
+   implements. An implementation that satisfies all the MUST or REQUIRED
+   level and all the SHOULD level requirements for its protocols is said
+   to be "unconditionally compliant"; one that satisfies all the MUST
+   level requirements but not all the SHOULD level requirements for its
+   protocols is said to be "conditionally compliant."
+
+1.3 Terminology
+
+   This specification uses a number of terms to refer to the roles
+   played by participants in, and objects of, the HTTP communication.
+
+   connection
+      A transport layer virtual circuit established between two programs
+      for the purpose of communication.
+
+   message
+      The basic unit of HTTP communication, consisting of a structured
+      sequence of octets matching the syntax defined in section 4 and
+      transmitted via the connection.
+
+   request
+      An HTTP request message, as defined in section 5.
+
+   response
+      An HTTP response message, as defined in section 6.
+
+
+
+
+
+
+
+
+Fielding, et al.            Standards Track                     [Page 8]
+
+RFC 2616                        HTTP/1.1                       June 1999
+
+
+   resource
+      A network data object or service that can be identified by a URI,
+      as defined in section 3.2. Resources may be available in multiple
+      representations (e.g. multiple languages, data formats, size, and
+      resolutions) or vary in other ways.
+
+   entity
+      The information transferred as the payload of a request or
+      response. An entity consists of metainformation in the form of
+      entity-header fields and content in the form of an entity-body, as
+      described in section 7.
+
+   representation
+      An entity included with a response that is subject to content
+      negotiation, as described in section 12. There may exist multiple
+      representations associated with a particular response status.
+
+   content negotiation
+      The mechanism for selecting the appropriate representation when
+      servicing a request, as described in section 12. The
+      representation of entities in any response can be negotiated
+      (including error responses).
+
+   variant
+      A resource may have one, or more than one, representation(s)
+      associated with it at any given instant. Each of these
+      representations is termed a `varriant'.  Use of the term `variant'
+      does not necessarily imply that the resource is subject to content
+      negotiation.
+
+   client
+      A program that establishes connections for the purpose of sending
+      requests.
+
+   user agent
+      The client which initiates a request. These are often browsers,
+      editors, spiders (web-traversing robots), or other end user tools.
+
+   server
+      An application program that accepts connections in order to
+      service requests by sending back responses. Any given program may
+      be capable of being both a client and a server; our use of these
+      terms refers only to the role being performed by the program for a
+      particular connection, rather than to the program's capabilities
+      in general. Likewise, any server may act as an origin server,
+      proxy, gateway, or tunnel, switching behavior based on the nature
+      of each request.
+
+
+
+
+Fielding, et al.            Standards Track                     [Page 9]
+
+RFC 2616                        HTTP/1.1                       June 1999
+
+
+   origin server
+      The server on which a given resource resides or is to be created.
+
+   proxy
+      An intermediary program which acts as both a server and a client
+      for the purpose of making requests on behalf of other clients.
+      Requests are serviced internally or by passing them on, with
+      possible translation, to other servers. A proxy MUST implement
+      both the client and server requirements of this specification. A
+      "transparent proxy" is a proxy that does not modify the request or
+      response beyond what is required for proxy authentication and
+      identification. A "non-transparent proxy" is a proxy that modifies
+      the request or response in order to provide some added service to
+      the user agent, such as group annotation services, media type
+      transformation, protocol reduction, or anonymity filtering. Except
+      where either transparent or non-transparent behavior is explicitly
+      stated, the HTTP proxy requirements apply to both types of
+      proxies.
+
+   gateway
+      A server which acts as an intermediary for some other server.
+      Unlike a proxy, a gateway receives requests as if it were the
+      origin server for the requested resource; the requesting client
+      may not be aware that it is communicating with a gateway.
+
+   tunnel
+      An intermediary program which is acting as a blind relay between
+      two connections. Once active, a tunnel is not considered a party
+      to the HTTP communication, though the tunnel may have been
+      initiated by an HTTP request. The tunnel ceases to exist when both
+      ends of the relayed connections are closed.
+
+   cache
+      A program's local store of response messages and the subsystem
+      that controls its message storage, retrieval, and deletion. A
+      cache stores cacheable responses in order to reduce the response
+      time and network bandwidth consumption on future, equivalent
+      requests. Any client or server may include a cache, though a cache
+      cannot be used by a server that is acting as a tunnel.
+
+   cacheable
+      A response is cacheable if a cache is allowed to store a copy of
+      the response message for use in answering subsequent requests. The
+      rules for determining the cacheability of HTTP responses are
+      defined in section 13. Even if a resource is cacheable, there may
+      be additional constraints on whether a cache can use the cached
+      copy for a particular request.
+
+
+
+
+Fielding, et al.            Standards Track                    [Page 10]
+
+RFC 2616                        HTTP/1.1                       June 1999
+
+
+   first-hand
+      A response is first-hand if it comes directly and without
+      unnecessary delay from the origin server, perhaps via one or more
+      proxies. A response is also first-hand if its validity has just
+      been checked directly with the origin server.
+
+   explicit expiration time
+      The time at which the origin server intends that an entity should
+      no longer be returned by a cache without further validation.
+
+   heuristic expiration time
+      An expiration time assigned by a cache when no explicit expiration
+      time is available.
+
+   age
+      The age of a response is the time since it was sent by, or
+      successfully validated with, the origin server.
+
+   freshness lifetime
+      The length of time between the generation of a response and its
+      expiration time.
+
+   fresh
+      A response is fresh if its age has not yet exceeded its freshness
+      lifetime.
+
+   stale
+      A response is stale if its age has passed its freshness lifetime.
+
+   semantically transparent
+      A cache behaves in a "semantically transparent" manner, with
+      respect to a particular response, when its use affects neither the
+      requesting client nor the origin server, except to improve
+      performance. When a cache is semantically transparent, the client
+      receives exactly the same response (except for hop-by-hop headers)
+      that it would have received had its request been handled directly
+      by the origin server.
+
+   validator
+      A protocol element (e.g., an entity tag or a Last-Modified time)
+      that is used to find out whether a cache entry is an equivalent
+      copy of an entity.
+
+   upstream/downstream
+      Upstream and downstream describe the flow of a message: all
+      messages flow from upstream to downstream.
+
+
+
+
+
+Fielding, et al.            Standards Track                    [Page 11]
+
+RFC 2616                        HTTP/1.1                       June 1999
+
+
+   inbound/outbound
+      Inbound and outbound refer to the request and response paths for
+      messages: "inbound" means "traveling toward the origin server",
+      and "outbound" means "traveling toward the user agent"
